@@ -1,86 +1,147 @@
-import { useState } from "react";
+import { useState,useRef,useEffect } from "react";
 import "./App.css";
 
+
 function App() {
-  const [todoList, setTodoList] = useState([
-    { id: 0, content: "123" },
-    { id: 1, content: "코딩 공부하기" },
-    { id: 2, content: "잠 자기" },
+  const [todo, setTodo] = useState([
+    { id: Number(new Date()),
+      content: '안녕하세요',
+    }
   ]);
+   return (
+   <>
+   <Advice />
+   <StopWatch />
+   <TodoInput setTodo={ setTodo } />
+   <TodoList todo={todo} setTodo={setTodo}/>
+   
+   </>
+   )
+   }
+  
+const useFetch = (url) =>{
+  const [isLoading, setIsloading] = useState(true)
+  const [data,setData] = useState(null)
 
-  return (
-    <>
-      <TodoList todoList={todoList} setTodoList={setTodoList} />
-      <hr />
-      <TodoInput todoList={todoList} setTodoList={setTodoList} />
-    </>
-  );
+  useEffect(() => {
+    fetch (url)
+    .then((res) => res.json())
+    .then((res) => {
+      setData(res)
+    setIsloading(false)
+    })
+  }, [url])
+  return [isLoading,data]
 }
 
-function TodoInput({ todoList, setTodoList }) {
-  const [inputValue, setInputValue] = useState("");
 
+
+const Advice = () =>{
+ const [isLoading,data]= useFetch ("https://korean-advice-open-api.vercel.app/api/advice")
+  
   return (
-    <>
-      <input
-        value={inputValue}
-        onChange={(event) => setInputValue(event.target.value)}
-      />
-      <button
-        onClick={() => {
-          const newTodo = { id: Number(new Date()), content: inputValue };
-          const newTodoList = [...todoList, newTodo];
-          setTodoList(newTodoList);
-          setInputValue("");
-        }}
-      >
-        추가하기
-      </button>
-    </>
-  );
+   <>
+   {!isLoading && (
+   <>
+   <div>{data.message}</div>
+   <div>-{data.author}-</div>
+   </>
+
+
+   )}
+   </>
+
+  )
 }
 
-function TodoList({ todoList, setTodoList }) {
+
+
+
+
+
+
+  const Clock = () =>{
+    
+    const [time,setTime] = useState(new Date())
+    useEffect(() =>{
+      setInterval(() =>{
+        setTime(new Date())
+    }, 1000)
+    }, [])
+    return <div>{time.toLocaleTimeString()}</div>
+
+  } 
+
+const formatTime = (seconds) =>{
+  const timeString = `${String(Math.floor(seconds /3600)).padStart
+  (2,"0" )}:${String (seconds % 60).padStart(2,"0")}`
+ 
+  return timeString
+}
+
+const StopWatch =() => {
+
+  const [time,setTime] = useState(3600)
+  const [isOn,setIsOn] = useState(false)
+  return <>{formatTime(time)}</>
+
+}
+
+
+
+const TodoInput = ({setTodo}) => {
+  const inputRef = useRef(null)
+  const addTodo =() => {
+   const newTodo ={
+     id: Number(new Date()),
+     content: inputRef.current.value,
+   }
+   setTodo((prev) => [...prev, newTodo])
+
+  }
+
+
+  return(
+    <>
+    <input ref={inputRef} />
+    <button onClick={addTodo}>추가</button>
+    
+    </>
+
+
+  )
+}
+
+const TodoList = ({todo, setTodo}) => {
   return (
-    <ul>
-      {todoList.map((todo) => (
-        <Todo key={todo.id} todo={todo} setTodoList={setTodoList} />
+     <ul>
+      {todo.map((el) => (
+       <Todo key={todo.id} todo={el} setTodo={setTodo} />
       ))}
-    </ul>
-  );
+     </ul>
+
+   
+ 
+ );
 }
 
-function Todo({ todo, setTodoList }) {
-  const [inputValue, setInputValue] = useState("");
-  return (
-    <li>
-      {todo.content}
-      <input
-        value={inputValue}
-        onChange={(event) => setInputValue(event.target.value)}
-      />
-      <button
+const Todo = ({todo,setTodo}) =>{
+ return(
+   <li>
+        {todo.content}
+        <button 
         onClick={() => {
-          setTodoList((prev) =>
-            prev.map((el) =>
-              el.id === todo.id ? { ...el, content: inputValue } : el
-            )
-          );
+        setTodo((prev) => prev.filter
+        ((el) =>el.id !== todo.id))
         }}
-      >
-        수정
-      </button>
-      <button
-        onClick={() => {
-          setTodoList((prev) => {
-            return prev.filter((el) => el.id !== todo.id);
-          });
-        }}
-      >
-        삭제
-      </button>
-    </li>
-  );
-}
+         >
+         삭제 
+         </button>
+  </li>
+ )
+ }
+
+
+ 
 
 export default App;
